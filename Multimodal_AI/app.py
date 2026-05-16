@@ -1,5 +1,5 @@
 from fastapi import FastAPI, UploadFile, File
-import shutil
+import tempfile
 import os
 
 from text_to_voice_service.whisper_engine import transcribe_audio
@@ -18,18 +18,28 @@ def home():
 @app.post("/speech-to-text")
 async def speech_to_text(file: UploadFile = File(...)):
 
-    os.makedirs("sample_audio", exist_ok=True)
+    temp_file = tempfile.NamedTemporaryFile(
+        delete=False,
+        suffix=".wav"
+    )
 
-    file_path = f"sample_audio/{file.filename}"
+    try:
 
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+        content = await file.read()
 
-    result = transcribe_audio(file_path)
+        temp_file.write(content)
 
-    return {
-        "status": "success",
-        "filename": file.filename,
-        "detected_language": result["language"],
-        "transcript": result["transcript"]
-    }
+        temp_file.close()
+
+        result = transcribe_audio(temp_file.name)
+
+        return {
+            "status": "success",
+            "filename": file.filename,
+            "detected_language": result["language"],
+            "transcript": result["transcript"]
+        }
+
+    finally:
+
+        os.unlink(temp_file.name)
