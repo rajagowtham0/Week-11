@@ -1,3 +1,7 @@
+import os
+
+os.environ["PATH"] += os.pathsep + r"C:\ffmpeg\bin"
+
 import whisper
 
 print("Loading Whisper model...")
