@@ -8,7 +8,7 @@ import whisper
 print("Loading Whisper model...")
 
 # Load Whisper model
-model = whisper.load_model("base")
+model = whisper.load_model("medium")
 
 print("Whisper model loaded successfully")
 
