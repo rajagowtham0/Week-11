@@ -1,34 +1,94 @@
 import os
 
-# Local FFmpeg path
+# Local FFmpeg Path
+
 os.environ["PATH"] += os.pathsep + r"C:\ffmpeg\bin"
 
+# Import Whisper
 import whisper
+# Load Whisper Model
 
 print("Loading Whisper model...")
 
-# Load Whisper model
+# Medium model gives very good multilingual accuracy
 model = whisper.load_model("medium")
 
 print("Whisper model loaded successfully")
 
 
+# Language Mapping
+
+LANGUAGE_MAP = {
+    "en": "English",
+    "te": "Telugu",
+    "hi": "Hindi",
+    "ta": "Tamil",
+    "ml": "Malayalam",
+    "kn": "Kannada",
+    "bn": "Bengali"
+}
+
+
+# Voice-to-Text Function
+
 def transcribe_audio(audio_path):
 
-    # Original language transcription
-    transcription_result = model.transcribe(
-        audio_path,
-        task="transcribe"
-    )
+    try:
 
-    # English translation
-    translation_result = model.transcribe(
-        audio_path,
-        task="translate"
-    )
 
-    return {
-        "detected_language": transcription_result["language"],
-        "original_transcription": transcription_result["text"].strip(),
-        "english_translation": translation_result["text"].strip()
-    }
+        # Original Language Transcription
+
+        transcription_result = model.transcribe(
+            audio_path,
+            task="transcribe",
+            fp16=False,
+            temperature=0
+        )
+
+        # English Translation
+
+        translation_result = model.transcribe(
+            audio_path,
+            task="translate",
+            fp16=False,
+            temperature=0
+        )
+
+        # Extract Language Information
+
+        language_code = transcription_result["language"]
+
+        language_name = LANGUAGE_MAP.get(
+            language_code,
+            "Unknown"
+        )
+
+        # Structured Response
+
+        return {
+
+            "detected_language_code":
+                language_code,
+
+            "detected_language":
+                language_name,
+
+            "original_transcription":
+                transcription_result["text"].strip(),
+
+            "english_translation":
+                translation_result["text"].strip()
+        }
+
+    except Exception as e:
+
+        return {
+
+            "detected_language": "Unknown",
+
+            "original_transcription": "",
+
+            "english_translation": "",
+
+            "error": str(e)
+        }
