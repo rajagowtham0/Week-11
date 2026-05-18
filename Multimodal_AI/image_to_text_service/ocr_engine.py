@@ -1,59 +1,139 @@
-from transformers import TrOCRProcessor, VisionEncoderDecoderModel
-from PIL import Image
-import torch
+import warnings
 
-print("Loading TrOCR model...")
+# Ignore unnecessary warnings
+warnings.filterwarnings("ignore")
 
-# Load processor and model
-processor = TrOCRProcessor.from_pretrained(
-    "microsoft/trocr-base-printed"
+# Import required libraries
+import easyocr
+import cv2
+
+# Import TextBlob for spell correction
+from textblob import TextBlob
+
+# Load EasyOCR model
+
+# Initialize EasyOCR Reader
+# ['en'] -> English language support
+# gpu=False -> Uses CPU for processing
+reader = easyocr.Reader(
+    ['en'],
+    gpu=False
 )
 
-model = VisionEncoderDecoderModel.from_pretrained(
-    "microsoft/trocr-base-printed"
-)
-
-print("TrOCR model loaded successfully")
+print("EasyOCR model loaded successfully")
 
 
+# Text Cleaning Function
+def clean_text(text):
+
+    # Remove extra spaces from extracted text
+    text = " ".join(text.split())
+
+    # Perform spell correction
+    corrected_text = str(
+        TextBlob(text).correct()
+    )
+
+    # Return cleaned text
+    return corrected_text.strip()
+
+
+# OCR Text Extraction Function
 def extract_text(image_path):
 
     try:
 
-        # Open image
-        image = Image.open(image_path).convert("RGB")
+        print("Starting OCR Extraction Pipeline")
 
-        # Preprocess image
-        pixel_values = processor(
-            images=image,
-            return_tensors="pt"
-        ).pixel_values
+        # Display image path
+        print(f"Processing Image: {image_path}")
 
-        # Generate text
-        generated_ids = model.generate(
-            pixel_values
+        # Read image using OpenCV
+        image = cv2.imread(image_path)
+
+        # Validate image loading
+        if image is None:
+
+            print("Image loading failed")
+
+            return "Unable to read image"
+
+        print("Image loaded successfully")
+
+        # Resize image
+        # Enlarging image improves OCR accuracy
+        image = cv2.resize(
+            image,
+            None,
+            fx=3,
+            fy=3,
+            interpolation=cv2.INTER_CUBIC
         )
 
-        # Decode generated text
-        extracted_text = processor.batch_decode(
-            generated_ids,
-            skip_special_tokens=True
-        )[0]
 
-        # Clean text
-        extracted_text = " ".join(
-            extracted_text.split()
+        # Perform OCR extraction
+
+        results = reader.readtext(
+            image,
+            paragraph=True
         )
 
-        extracted_text = extracted_text.strip()
+        print("OCR text detection completed")
 
-        # Handle empty output
-        if extracted_text == "":
+        # Display raw OCR results
+        print("OCR Raw Results:")
+        print(results)
+
+        # Store extracted text
+        extracted_text = []
+
+        # Loop through OCR results
+        for result in results:
+
+            # Validate OCR result structure
+            if len(result) < 2:
+
+                continue
+
+            # Extract detected text
+            text = result[1]
+
+            print(f"Detected Text: {text}")
+
+            # Store cleaned text
+            extracted_text.append(
+                text.strip()
+            )
+
+        # Combine extracted text
+        final_text = " ".join(extracted_text)
+
+
+        # Clean and correct extracted text
+        final_text = clean_text(
+            final_text
+        )
+
+
+        # Handle empty OCR output
+        if final_text == "":
+
+            print("No text detected in image")
 
             return "No text detected"
 
-        return extracted_text
+        # Display final extracted text
+        print("Final Extracted Text:")
+        print(final_text)
+
+        # Return final extracted text
+        return final_text
 
     except Exception as e:
 
+        # Print OCR extraction error
+        print("OCR Extraction Error:")
+        print(str(e))
+
+        # Return error message
         return f"OCR Extraction Error: {str(e)}"
