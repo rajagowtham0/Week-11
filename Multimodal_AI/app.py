@@ -1,34 +1,48 @@
+# Import FastAPI and file handling utilities
 from fastapi import FastAPI, UploadFile, File
+
+# Import temporary file handling library
 import tempfile
+
+# Import operating system utilities
 import os
 
+# Import Whisper voice-to-text function
 from text_to_voice_service.whisper_engine import (
     transcribe_audio
 )
 
+# Import OCR text extraction function
 from image_to_text_service.ocr_engine import (
     extract_text
 )
 
-# Create FastAPI app
-app = FastAPI()
+# Create FastAPI application
+app = FastAPI(
+    title="Multimodal CCMS_AI"
+)
 
 
+# Home API Endpoint
+# Checks whether API service is running successfully
 @app.get("/")
 def home():
 
     return {
-        "message": "Multimodal AI Services Running Successfully"
+
+        "message":
+            "Multimodal CCMS_AI Services Running Successfully"
     }
 
 
-# Voice-to-Text Endpoint
-
+# Voice-to-Text API Endpoint
+# Converts uploaded multilingual audio into text
 @app.post("/speech-to-text")
 async def speech_to_text(
     file: UploadFile = File(...)
 ):
 
+    # Initialize temporary file variable
     temp_file = None
 
     try:
@@ -40,7 +54,7 @@ async def speech_to_text(
             ".m4a"
         ]
 
-        # Get extension
+        # Extract uploaded file extension
         file_extension = os.path.splitext(
             file.filename
         )[1].lower()
@@ -49,30 +63,35 @@ async def speech_to_text(
         if file_extension not in allowed_audio_formats:
 
             return {
+
                 "status": "error",
-                "message": "Unsupported audio format"
+
+                "message":
+                    "Unsupported audio format"
             }
 
-        # Create temp audio file
+        # Create temporary audio file
         temp_file = tempfile.NamedTemporaryFile(
             delete=False,
             suffix=file_extension,
             mode="wb"
         )
 
-        # Read uploaded file
+        # Read uploaded audio file
         content = await file.read()
 
-        # Write audio
+        # Write uploaded audio into temporary file
         temp_file.write(content)
 
+        # Close temporary file
         temp_file.close()
 
-        # Whisper transcription
+        # Perform Whisper transcription
         result = transcribe_audio(
             temp_file.name
         )
 
+        # Return structured response
         return {
 
             "status": "success",
@@ -105,18 +124,20 @@ async def speech_to_text(
 
     except Exception as e:
 
+        # Return error response
         return {
 
             "status": "error",
 
             "service": "voice_to_text",
 
-            "message": str(e)
+            "message":
+                str(e)
         }
 
     finally:
 
-        # Delete temp file
+        # Delete temporary audio file
         if temp_file is not None:
 
             if os.path.exists(
@@ -128,13 +149,14 @@ async def speech_to_text(
                 )
 
 
-# OCR / Picture-to-Text Endpoint
-
+# OCR / Picture-to-Text API Endpoint
+# Extracts text from uploaded clinical images/documents
 @app.post("/ocr")
 async def ocr_extraction(
     file: UploadFile = File(...)
 ):
 
+    # Initialize temporary file variable
     temp_file = None
 
     try:
@@ -146,7 +168,7 @@ async def ocr_extraction(
             ".jpeg"
         ]
 
-        # Get extension
+        # Extract uploaded image extension
         file_extension = os.path.splitext(
             file.filename
         )[1].lower()
@@ -155,11 +177,14 @@ async def ocr_extraction(
         if file_extension not in allowed_image_formats:
 
             return {
+
                 "status": "error",
-                "message": "Unsupported image format"
+
+                "message":
+                    "Unsupported image format"
             }
 
-        # Create temp image file
+        # Create temporary image file
         temp_file = tempfile.NamedTemporaryFile(
             delete=False,
             suffix=file_extension,
@@ -169,16 +194,18 @@ async def ocr_extraction(
         # Read uploaded image
         content = await file.read()
 
-        # Write image
+        # Write image into temporary file
         temp_file.write(content)
 
+        # Close temporary file
         temp_file.close()
 
-        # OCR extraction
+        # Perform OCR extraction
         extracted_text = extract_text(
             temp_file.name
         )
 
+        # Return structured OCR response
         return {
 
             "status": "success",
@@ -194,18 +221,20 @@ async def ocr_extraction(
 
     except Exception as e:
 
+        # Return OCR error response
         return {
 
             "status": "error",
 
             "service": "ocr_picture_to_text",
 
-            "message": str(e)
+            "message":
+                str(e)
         }
 
     finally:
 
-        # Delete temp file
+        # Delete temporary image file
         if temp_file is not None:
 
             if os.path.exists(
