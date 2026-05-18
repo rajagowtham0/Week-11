@@ -1,111 +1,58 @@
-import warnings
-warnings.filterwarnings("ignore")
+from transformers import TrOCRProcessor, VisionEncoderDecoderModel
+from PIL import Image
+import torch
 
-import easyocr
-import cv2
-import numpy as np
+print("Loading TrOCR model...")
 
-# Load OCR Model
-
-print("Loading OCR model...")
-
-reader = easyocr.Reader(
-    ['en'],
-    gpu=False
+# Load processor and model
+processor = TrOCRProcessor.from_pretrained(
+    "microsoft/trocr-base-printed"
 )
 
-print("OCR model loaded successfully")
+model = VisionEncoderDecoderModel.from_pretrained(
+    "microsoft/trocr-base-printed"
+)
 
+print("TrOCR model loaded successfully")
 
-# OCR Extraction Function
 
 def extract_text(image_path):
 
     try:
 
-        # Read Image
-        image = cv2.imread(image_path)
+        # Open image
+        image = Image.open(image_path).convert("RGB")
 
-        # Validate image
-        if image is None:
+        # Preprocess image
+        pixel_values = processor(
+            images=image,
+            return_tensors="pt"
+        ).pixel_values
 
-            return "Unable to read image"
-
-        # Convert image to grayscale
-        gray = cv2.cvtColor(
-            image,
-            cv2.COLOR_BGR2GRAY
+        # Generate text
+        generated_ids = model.generate(
+            pixel_values
         )
 
-        # Resize image for better OCR accuracy
-        gray = cv2.resize(
-            gray,
-            None,
-            fx=3,
-            fy=3,
-            interpolation=cv2.INTER_CUBIC
+        # Decode generated text
+        extracted_text = processor.batch_decode(
+            generated_ids,
+            skip_special_tokens=True
+        )[0]
+
+        # Clean text
+        extracted_text = " ".join(
+            extracted_text.split()
         )
 
-        # Denoise image
-        gray = cv2.fastNlMeansDenoising(
-            gray,
-            None,
-            10,
-            7,
-            21
-        )
+        extracted_text = extracted_text.strip()
 
-        # Adaptive thresholding
-        processed_image = cv2.adaptiveThreshold(
-            gray,
-            255,
-            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-            cv2.THRESH_BINARY,
-            31,
-            11
-        )
-
-        # OCR Extraction
-        results = reader.readtext(
-            processed_image,
-            detail=1,
-            paragraph=False
-        )
-
-        # Store extracted text
-        extracted_text = []
-
-        for result in results:
-
-            # Safe validation
-            if len(result) < 3:
-                continue
-
-            bounding_box = result[0]
-            text = result[1]
-            confidence = result[2]
-
-            # Filter weak predictions
-            if confidence >= 0.20:
-
-                cleaned_text = text.strip()
-
-                if cleaned_text != "":
-
-                    extracted_text.append(cleaned_text)
-
-        # Join all extracted text
-        final_text = " ".join(extracted_text)
-
-        # Remove extra spaces
-        final_text = " ".join(final_text.split())
-
-        # Handle empty detection
-        if final_text == "":
+        # Handle empty output
+        if extracted_text == "":
 
             return "No text detected"
 
-        return final_text
+        return extracted_text
 
     except Exception as e:
 
