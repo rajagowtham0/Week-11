@@ -7,10 +7,8 @@ warnings.filterwarnings("ignore")
 import easyocr
 import cv2
 
-# Import TextBlob for spell correction
-from textblob import TextBlob
-
 # Load EasyOCR model
+print("Loading EasyOCR model...")
 
 # Initialize EasyOCR Reader
 # ['en'] -> English language support
@@ -24,18 +22,29 @@ print("EasyOCR model loaded successfully")
 
 
 # Text Cleaning Function
+# Cleans extracted OCR text without modifying original words
 def clean_text(text):
 
-    # Remove extra spaces from extracted text
+    print("Starting text cleaning process...")
+
+    # Remove extra spaces
     text = " ".join(text.split())
 
-    # Perform spell correction
-    corrected_text = str(
-        TextBlob(text).correct()
+    print("Extra spaces removed")
+
+    # Replace newline characters with spaces
+    text = text.replace(
+        "\n",
+        " "
     )
 
+    # Remove repeated spaces again
+    text = " ".join(text.split())
+
+    print("Text formatting cleanup completed")
+
     # Return cleaned text
-    return corrected_text.strip()
+    return text.strip()
 
 
 # OCR Text Extraction Function
@@ -70,8 +79,10 @@ def extract_text(image_path):
             interpolation=cv2.INTER_CUBIC
         )
 
+        print("Image resized successfully")
 
         # Perform OCR extraction
+        print("Starting OCR text detection...")
 
         results = reader.readtext(
             image,
@@ -100,20 +111,24 @@ def extract_text(image_path):
 
             print(f"Detected Text: {text}")
 
-            # Store cleaned text
+            # Store extracted text
             extracted_text.append(
                 text.strip()
             )
 
+        print("All detected text collected successfully")
+
         # Combine extracted text
         final_text = " ".join(extracted_text)
 
+        print("Text combination completed")
 
-        # Clean and correct extracted text
+        # Clean extracted text
         final_text = clean_text(
             final_text
         )
 
+        print("Text cleaning completed")
 
         # Handle empty OCR output
         if final_text == "":
