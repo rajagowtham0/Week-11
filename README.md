@@ -72,6 +72,17 @@ Contains sample OCR test images.
 2. Automatic language detection
 3. English translation
 
+## Sample response
+
+{
+  "service": "voice_to_text",
+  "input_filename": "Tamil_cough.mp3",
+  "detected_language": "Tamil",
+  "original_transcription": "நோயாளைக்கு இறுமல் மற்றும் தலை வலி உளது",
+  "english_translation": "The patient has a headache and dizziness."
+}
+
+
 # OCR / Picture-to-Text API
 
 ## Supported Formats
@@ -90,8 +101,7 @@ Contains sample OCR test images.
 
 json Structured
 {
-  "status": "success",
   "service": "ocr_picture_to_text",
-  "input_filename": "prescription.png",
-  "extracted_text": "Patient has fever and headache"
+  "input_filename": "hairloss_prescription_1.png",
+  "extracted_text": "Dermatology Prescription Patient Karthik M Diagncsis Hair Lccs 1. Minoxidil5% Solution Twice daily 2. Biotin Tablets-Once daily 3. Protein-rich dietadvised Reviewafter 30 days"
 }
