@@ -66,9 +66,6 @@ def transcribe_audio(audio_path):
         # Structured Response
         return {
 
-            "detected_language_code":
-                language_code,
-
             "detected_language":
                 language_name,
 

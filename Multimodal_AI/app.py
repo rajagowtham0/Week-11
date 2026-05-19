@@ -8,7 +8,7 @@ import tempfile
 import os
 
 # Import Whisper voice-to-text function
-from text_to_voice_service.whisper_engine import (
+from voice_to_text_service.whisper_engine import (
     transcribe_audio
 )
 
@@ -94,17 +94,10 @@ async def speech_to_text(
         # Return structured response
         return {
 
-            "status": "success",
-
             "service": "voice_to_text",
 
             "input_filename":
                 file.filename,
-
-            "detected_language_code":
-                result.get(
-                    "detected_language_code"
-                ),
 
             "detected_language":
                 result.get(
@@ -207,8 +200,6 @@ async def ocr_extraction(
 
         # Return structured OCR response
         return {
-
-            "status": "success",
 
             "service": "ocr_picture_to_text",
 
